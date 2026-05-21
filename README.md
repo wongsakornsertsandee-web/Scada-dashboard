@@ -30,7 +30,7 @@ Real-time Smart Building / HVAC Monitoring Dashboard using Flask, SQLite, and Op
 ---
 ## System Architecture
 Open-Meteo API →Python Flask Backend → SQLite Database → Web Dashboard
-//You can customize it in app.py
+      //You can customize it in app.py
 Temperature < 18°C → Heater ON // --Humidity > 70% → Ventilation ON // --Wind Speed > 15 km/h OR Rain > 5 mm → Weather Alarm ON.
 | Technology          | Purpose             |
 | ------------------- | ------------------- |
