@@ -68,7 +68,7 @@ def apply_control_logic(data):
     precipitation = data["precipitation"]
 
     data["heater_status"] = "ON" if temperature < 18 else "OFF"
-    data["ventilation_status"] = "ON" if humidity > 80 else "OFF"
+    data["ventilation_status"] = "ON" if humidity > 70 else "OFF"
     data["weather_alarm"] = "ON" if wind_speed > 15 or precipitation > 5 else "OFF"
 
     return data
