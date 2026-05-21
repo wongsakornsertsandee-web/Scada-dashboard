@@ -38,13 +38,9 @@ SQLite Database
         ↓
 Web Dashboard
 //You can customize it in app.py
---Temperature < 18°C
-→ Heater ON
---Humidity > 70%
-→ Ventilation ON
---Wind Speed > 15 km/h
---OR Rain > 5 mm
-→ Weather Alarm ON
+--Temperature < 18°C → Heater ON
+--Humidity > 70% → Ventilation ON
+--Wind Speed > 15 km/h OR Rain > 5 mm → Weather Alarm ON
 | Technology          | Purpose             |
 | ------------------- | ------------------- |
 | Python              | Backend Logic       |
