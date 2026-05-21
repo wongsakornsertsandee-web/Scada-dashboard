@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini SCADA - Open Meteo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #38bdf8;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 25px 0;
+        }
+
+        .tab-button {
+            background: #1f2937;
+            color: white;
+            border: 1px solid #374151;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .tab-button.active {
+            background: #38bdf8;
+            color: #111827;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: #1f2937;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px #000;
+            margin-bottom: 20px;
+        }
+
+        .value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .on {
+            color: #22c55e;
+        }
+
+        .off {
+            color: #ef4444;
+        }
+
+        .alarm {
+            color: #facc15;
+        }
+
+        .wide {
+            grid-column: span 3;
+        }
+
+        .table-scroll {
+            max-height: 360px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #374151;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        td, th {
+            padding: 10px;
+            border-bottom: 1px solid #374151;
+            text-align: left;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #111827;
+            z-index: 1;
+        }
+
+        .match {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .not-match {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .status-big {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .wide {
+                grid-column: span 1;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Mini SCADA Web App - Helsinki Weather</h1>
+<p>Data Source: Open-Meteo API</p>
+<p>Last Update: <span id="time">-</span></p>
+
+<div class="tabs">
+    <button class="tab-button active" onclick="openTab('dashboardTab', this)">Dashboard</button>
+    <button class="tab-button" onclick="openTab('historyTab', this)">Historical Data</button>
+    <button class="tab-button" onclick="openTab('verifyTab', this)">Data Verification</button>
+</div>
+
+<div id="dashboardTab" class="tab-content active">
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>Temperature</h2>
+            <div class="value"><span id="temperature">-</span> °C</div>
+        </div>
+
+        <div class="card">
+            <h2>Humidity</h2>
+            <div class="value"><span id="humidity">-</span> %</div>
+        </div>
+
+        <div class="card">
+            <h2>Wind Speed</h2>
+            <div class="value"><span id="wind_speed">-</span> km/h</div>
+        </div>
+
+        <div class="card">
+            <h2>Precipitation</h2>
+            <div class="value"><span id="precipitation">-</span> mm</div>
+        </div>
+
+        <div class="card">
+            <h2>Heater</h2>
+            <div class="value" id="heater_status">-</div>
+        </div>
+
+        <div class="card">
+            <h2>Ventilation</h2>
+            <div class="value" id="ventilation_status">-</div>
+        </div>
+
+        <div class="card">
+            <h2>Weather Alarm</h2>
+            <div class="value alarm" id="weather_alarm">-</div>
+        </div>
+
+        <div class="card wide">
+            <h2>Realtime Trend Graph</h2>
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <div class="card wide">
+            <h2>Alarm / Event History</h2>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Device</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div id="historyTab" class="tab-content">
+
+    <div class="card">
+        <h2>Historical Trend Graph</h2>
+        <p>Graph from SQLite database records.</p>
+        <canvas id="historyChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>Historical Data Table</h2>
+        <p>Stored records from SQLite database.</p>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Temp</th>
+                        <th>Humidity</th>
+                        <th>Wind</th>
+                        <th>Rain</th>
+                        <th>Heater</th>
+                        <th>Ventilation</th>
+                        <th>Alarm</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div id="verifyTab" class="tab-content">
+
+    <div class="card">
+        <h2>Data Verification</h2>
+        <p>This compares latest Open-Meteo API data with latest SQLite database record.</p>
+        <div id="verifyStatus" class="status-big">Checking...</div>
+        <p>Checked at: <span id="checked_at">-</span></p>
+    </div>
+
+    <div class="card">
+        <h2>API vs Database Comparison</h2>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Open-Meteo API</th>
+                        <th>SQLite Database</th>
+                        <th>Match</th>
+                    </tr>
+                </thead>
+                <tbody id="compareTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const labels = [];
+const temperatureData = [];
+const humidityData = [];
+const windData = [];
+
+const ctx = document.getElementById("trendChart");
+
+const trendChart = new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: "Temperature °C",
+                data: temperatureData,
+                borderWidth: 2
+            },
+            {
+                label: "Humidity %",
+                data: humidityData,
+                borderWidth: 2
+            },
+            {
+                label: "Wind Speed km/h",
+                data: windData,
+                borderWidth: 2
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: false
+            }
+        }
+    }
+});
+
+const historyCtx = document.getElementById("historyChart");
+
+const historyChart = new Chart(historyCtx, {
+    type: "line",
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label: "Historical Temperature °C",
+                data: [],
+                borderWidth: 2
+            },
+            {
+                label: "Historical Humidity %",
+                data: [],
+                borderWidth: 2
+            },
+            {
+                label: "Historical Wind Speed km/h",
+                data: [],
+                borderWidth: 2
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: false
+            }
+        }
+    }
+});
+
+function openTab(tabId, button) {
+    const contents = document.querySelectorAll(".tab-content");
+    const buttons = document.querySelectorAll(".tab-button");
+
+    contents.forEach(content => content.classList.remove("active"));
+    buttons.forEach(btn => btn.classList.remove("active"));
+
+    document.getElementById(tabId).classList.add("active");
+    button.classList.add("active");
+
+    if (tabId === "historyTab") {
+        updateHistory();
+    }
+
+    if (tabId === "verifyTab") {
+        verifyData();
+    }
+}
+
+async function fetchData() {
+    try {
+        const response = await fetch("/api/data");
+        const data = await response.json();
+
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+
+        document.getElementById("time").innerText = data.time;
+        document.getElementById("temperature").innerText = data.temperature;
+        document.getElementById("humidity").innerText = data.humidity;
+        document.getElementById("wind_speed").innerText = data.wind_speed;
+        document.getElementById("precipitation").innerText = data.precipitation;
+
+        updateStatus("heater_status", data.heater_status);
+        updateStatus("ventilation_status", data.ventilation_status);
+        updateStatus("weather_alarm", data.weather_alarm);
+
+        updateChart(data);
+        updateEvents(data.events);
+        updateHistory();
+        verifyData();
+
+    } catch (error) {
+        console.error("Fetch error:", error);
+    }
+}
+
+function updateStatus(id, value) {
+    const element = document.getElementById(id);
+    element.innerText = value;
+
+    if (value === "ON") {
+        element.className = "value on";
+    } else {
+        element.className = "value off";
+    }
+}
+
+function updateChart(data) {
+    labels.push(data.time);
+    temperatureData.push(data.temperature);
+    humidityData.push(data.humidity);
+    windData.push(data.wind_speed);
+
+    if (labels.length > 20) {
+        labels.shift();
+        temperatureData.shift();
+        humidityData.shift();
+        windData.shift();
+    }
+
+    trendChart.update();
+}
+
+function updateEvents(events) {
+    const table = document.getElementById("eventTable");
+    table.innerHTML = "";
+
+    events.slice().reverse().forEach(event => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${event.time}</td>
+            <td>${event.device}</td>
+            <td>${event.status}</td>
+        `;
+
+        table.appendChild(row);
+    });
+}
+
+async function updateHistory() {
+    try {
+        const response = await fetch("/api/history");
+        const history = await response.json();
+
+        const table = document.getElementById("historyTable");
+        table.innerHTML = "";
+
+        history.slice().reverse().forEach(row => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${row.time}</td>
+                <td>${row.temperature}</td>
+                <td>${row.humidity}</td>
+                <td>${row.wind_speed}</td>
+                <td>${row.precipitation}</td>
+                <td>${row.heater_status}</td>
+                <td>${row.ventilation_status}</td>
+                <td>${row.weather_alarm}</td>
+            `;
+
+            table.appendChild(tr);
+        });
+
+        updateHistoryChart(history);
+
+    } catch (error) {
+        console.error("History error:", error);
+    }
+}
+
+function updateHistoryChart(history) {
+    const times = history.map(row => row.time);
+    const temps = history.map(row => row.temperature);
+    const humidity = history.map(row => row.humidity);
+    const wind = history.map(row => row.wind_speed);
+
+    historyChart.data.labels = times;
+    historyChart.data.datasets[0].data = temps;
+    historyChart.data.datasets[1].data = humidity;
+    historyChart.data.datasets[2].data = wind;
+
+    historyChart.update();
+}
+
+async function verifyData() {
+    try {
+        const response = await fetch("/api/verify");
+        const data = await response.json();
+
+        const statusElement = document.getElementById("verifyStatus");
+        const checkedAtElement = document.getElementById("checked_at");
+        const table = document.getElementById("compareTable");
+
+        table.innerHTML = "";
+
+        if (data.status === "MATCH") {
+            statusElement.innerText = "MATCH ✅";
+            statusElement.className = "status-big match";
+        } else if (data.status === "NOT_MATCH") {
+            statusElement.innerText = "NOT MATCH ❌";
+            statusElement.className = "status-big not-match";
+        } else {
+            statusElement.innerText = data.status;
+            statusElement.className = "status-big not-match";
+        }
+
+        checkedAtElement.innerText = data.checked_at || "-";
+
+        if (!data.db_latest) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="4">No database data found yet.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        const fields = [
+            "time",
+            "temperature",
+            "humidity",
+            "wind_speed",
+            "precipitation",
+            "heater_status",
+            "ventilation_status",
+            "weather_alarm"
+        ];
+
+        fields.forEach(field => {
+            const apiValue = data.api_now[field];
+            const dbValue = data.db_latest[field];
+            const isMatch = data.match_result[field];
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${field}</td>
+                <td>${apiValue}</td>
+                <td>${dbValue}</td>
+                <td class="${isMatch ? 'match' : 'not-match'}">${isMatch}</td>
+            `;
+
+            table.appendChild(row);
+        });
+
+    } catch (error) {
+        console.error("Verify error:", error);
+    }
+}
+
+fetchData();
+setInterval(fetchData, 60000);
+</script>
+
+</body>
+</html>

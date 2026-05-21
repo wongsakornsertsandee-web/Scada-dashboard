@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SCADA Data Verification</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #38bdf8;
+        }
+
+        .status {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .match {
+            color: #22c55e;
+        }
+
+        .not-match {
+            color: #ef4444;
+        }
+
+        .card {
+            background: #1f2937;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        td, th {
+            padding: 10px;
+            border-bottom: 1px solid #374151;
+            text-align: left;
+        }
+
+        .true {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .false {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        a {
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body>
+
+<h1>SCADA Data Verification</h1>
+
+<p>This page compares the latest Open-Meteo API data with the latest record stored in SQLite database.</p>
+
+<p>
+    <a href="/">Back to Dashboard</a>
+</p>
+
+<div class="card">
+    <h2>Verification Status</h2>
+    <div id="status" class="status">Checking...</div>
+    <p>Checked at: <span id="checked_at">-</span></p>
+</div>
+
+<div class="card">
+    <h2>API vs Database Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Parameter</th>
+                <th>Open-Meteo API</th>
+                <th>SQLite Database</th>
+                <th>Match</th>
+            </tr>
+        </thead>
+
+        <tbody id="compareTable">
+        </tbody>
+    </table>
+</div>
+
+<script>
+async function verifyData() {
+    const response = await fetch("/api/verify");
+    const data = await response.json();
+
+    const statusElement = document.getElementById("status");
+    const checkedAtElement = document.getElementById("checked_at");
+    const table = document.getElementById("compareTable");
+
+    table.innerHTML = "";
+
+    if (data.status === "MATCH") {
+        statusElement.innerText = "MATCH ✅";
+        statusElement.className = "status match";
+    } else if (data.status === "NOT_MATCH") {
+        statusElement.innerText = "NOT MATCH ❌";
+        statusElement.className = "status not-match";
+    } else {
+        statusElement.innerText = data.status;
+        statusElement.className = "status not-match";
+    }
+
+    checkedAtElement.innerText = data.checked_at || "-";
+
+    if (!data.db_latest) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="4">No database data found yet.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    const fields = [
+        "time",
+        "temperature",
+        "humidity",
+        "wind_speed",
+        "precipitation",
+        "heater_status",
+        "ventilation_status",
+        "weather_alarm"
+    ];
+
+    fields.forEach(field => {
+        const apiValue = data.api_now[field];
+        const dbValue = data.db_latest[field];
+        const isMatch = data.match_result[field];
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${field}</td>
+            <td>${apiValue}</td>
+            <td>${dbValue}</td>
+            <td class="${isMatch}">${isMatch}</td>
+        `;
+
+        table.appendChild(row);
+    });
+}
+
+verifyData();
+setInterval(verifyData, 60000);
+</script>
+
+</body>
+</html>
