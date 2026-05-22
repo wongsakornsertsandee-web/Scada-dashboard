@@ -45,7 +45,8 @@ Temperature < 18°C → Heater ON // --Humidity > 70% → Ventilation ON // --Wi
 | Render              | Cloud Deployment    |
 
 
-!!Sources Flask Full Course https://www.youtube.com/watch?v=Z1RJmh_OqeA
-          Documentation     https://flask.palletsprojects.com/en/stable/?utm_source=chatgpt.com
-          SQLite Database   https://www.youtube.com/watch?v=pd-0G0MigUA
-          Getting Started With Chart.js https://www.youtube.com/watch?v=sE08f4iuOhA !!
+#Sources 
+#Flask Full Course https://www.youtube.com/watch?v=Z1RJmh_OqeA
+#Documentation     https://flask.palletsprojects.com/en/stable/?utm_source=chatgpt.com
+#SQLite Database   https://www.youtube.com/watch?v=pd-0G0MigUA
+#Getting Started With Chart.js https://www.youtube.com/watch?v=sE08f4iuOhA !!
