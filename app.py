@@ -6,6 +6,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+
 DB_NAME = "scada_data.db"
 
 PARAMS = {
